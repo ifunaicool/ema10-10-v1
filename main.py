@@ -39,24 +39,21 @@ logger = logging.getLogger(__name__)
 def get_all_stocks(exclude_st=True, max_retries=3):
     """
     获取沪深所有A股股票代码列表，可选择剔除ST/*ST股票
-    加入重试机制
+    使用 stock_info_a_code_name 接口（更稳定）
     """
     logger.info("正在获取沪深A股股票列表...")
     for attempt in range(max_retries):
         try:
-            df = ak.stock_zh_a_spot_em()
+            df = ak.stock_info_a_code_name()
             logger.info(f"获取到 {len(df)} 只股票")
 
             if exclude_st:
-                # 剔除ST、*ST、退市股票
-                mask = ~df['名称'].str.contains(r'ST|\*ST|退', na=False, regex=True)
+                # 剔除ST、*ST股票
+                mask = ~df['name'].str.contains(r'ST|\*ST|退', na=False, regex=True)
                 df = df[mask]
                 logger.info(f"剔除ST/*ST后剩余 {len(df)} 只股票")
 
-            # 筛选价格在合理范围内
-            df = df[(df['最新价'] > STOCK_PRICE_MIN) & (df['最新价'] < STOCK_PRICE_MAX)]
-
-            stock_list = df['代码'].tolist()
+            stock_list = df['code'].tolist()
             logger.info(f"最终有效股票数量: {len(stock_list)}")
             return stock_list
         except Exception as e:
@@ -106,7 +103,15 @@ def analyze_stock_data(stock_code: str, df_en: pd.DataFrame, analyzer: Indicator
 
     # 获取股票名称（使用akshare单独获取）
     try:
-        stock_name = ak.stock_individual_info_em(symbol=stock_code).loc['股票简称', 'value']
+        # 尝试从 stock_info_a_code_name 获取名称（但我们已经有了df，不过为了准确，还是用akshare获取）
+        # 简单起见，直接使用传入的stock_code作为名称的一部分，或者从之前的列表获取，但这里重新获取一次
+        # 这里我们先用stock_code代替，稍后可以从之前的数据中获取，但为了简化，我们调用akshare获取
+        name_df = ak.stock_info_a_code_name()
+        name_row = name_df[name_df['code'] == stock_code]
+        if not name_row.empty:
+            stock_name = name_row.iloc[0]['name']
+        else:
+            stock_name = stock_code
     except:
         stock_name = stock_code
 
