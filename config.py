@@ -17,9 +17,9 @@ CACHE_ENABLED = True     # 启用缓存
 TIMEOUT = 30             # 超时时间
 MAX_WORKERS = 8          # 并发线程数
 
-# 股票筛选
-STOCK_PRICE_MIN = 0      # 最低股价
-STOCK_PRICE_MAX = 1000   # 最高股价
+# 股票筛选（价格筛选已移除，改用名称剔除ST）
+STOCK_PRICE_MIN = 0      # 最低股价（不再使用）
+STOCK_PRICE_MAX = 1000   # 最高股价（不再使用）
 
 # 输出文件
 OUTPUT_HTML = "top20_signals.html"   # 生成的网页文件名
