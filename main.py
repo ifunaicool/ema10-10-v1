@@ -36,30 +36,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_all_stocks(exclude_st=True):
+def get_all_stocks(exclude_st=True, max_retries=3):
     """
     获取沪深所有A股股票代码列表，可选择剔除ST/*ST股票
+    加入重试机制
     """
     logger.info("正在获取沪深A股股票列表...")
-    try:
-        df = ak.stock_zh_a_spot_em()
-        logger.info(f"获取到 {len(df)} 只股票")
+    for attempt in range(max_retries):
+        try:
+            df = ak.stock_zh_a_spot_em()
+            logger.info(f"获取到 {len(df)} 只股票")
 
-        if exclude_st:
-            # 剔除ST、*ST、退市股票
-            mask = ~df['名称'].str.contains(r'ST|\*ST|退', na=False, regex=True)
-            df = df[mask]
-            logger.info(f"剔除ST/*ST后剩余 {len(df)} 只股票")
+            if exclude_st:
+                # 剔除ST、*ST、退市股票
+                mask = ~df['名称'].str.contains(r'ST|\*ST|退', na=False, regex=True)
+                df = df[mask]
+                logger.info(f"剔除ST/*ST后剩余 {len(df)} 只股票")
 
-        # 筛选价格在合理范围内
-        df = df[(df['最新价'] > STOCK_PRICE_MIN) & (df['最新价'] < STOCK_PRICE_MAX)]
+            # 筛选价格在合理范围内
+            df = df[(df['最新价'] > STOCK_PRICE_MIN) & (df['最新价'] < STOCK_PRICE_MAX)]
 
-        stock_list = df['代码'].tolist()
-        logger.info(f"最终有效股票数量: {len(stock_list)}")
-        return stock_list
-    except Exception as e:
-        logger.error(f"获取股票列表失败: {e}")
-        return []
+            stock_list = df['代码'].tolist()
+            logger.info(f"最终有效股票数量: {len(stock_list)}")
+            return stock_list
+        except Exception as e:
+            logger.error(f"获取股票列表失败 (尝试 {attempt+1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 指数退避
+                logger.info(f"等待 {wait_time} 秒后重试...")
+                time.sleep(wait_time)
+            else:
+                logger.error("所有重试均失败，请检查网络连接或稍后再试。")
+                return []
 
 
 def analyze_stock_data(stock_code: str, df_en: pd.DataFrame, analyzer: IndicatorAnalyzer) -> Optional[Dict]:
