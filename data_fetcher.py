@@ -15,6 +15,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 warnings.filterwarnings('ignore')
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('stock_data_fetcher.log', encoding='utf-8', mode='a')
+    ]
+)
 logger = logging.getLogger(__name__)
 
 
