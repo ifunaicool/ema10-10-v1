@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MA10平滑策略 - 前20强信号股票</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.1.min.js" charset="utf-8"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            background-color: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            width: 100%;
+            min-height: 700px;
+            margin-bottom: 20px;
+            background-color: #0f3460;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #ff6b8b;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .stock-info {
+            text-align: center;
+            font-size: 20px;
+            margin: 10px 0;
+            color: #ffd700;
+        }
+        .strength {
+            color: #00e676;
+            font-weight: bold;
+        }
+        .date {
+            color: #ffa726;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 MA10平滑策略 - 强信号股票 TOP20</h1>
+        <div class="subtitle">离当前日期最近且买入信号最强的20只股票</div>
+
+        <div class="stock-info" id="stock-info"></div>
+
+        <div id="chart-container" class="chart-container"></div>
+
+        <div class="nav-buttons">
+            <button id="prev-btn" onclick="changeChart(-1)">◀ 上一个</button>
+            <span id="page-indicator">第 1 / 20 只</span>
+            <button id="next-btn" onclick="changeChart(1)">下一个 ▶</button>
+        </div>
+    </div>
+
+    <script>
+        // 从后端传递的数据
+        const chartData = {{CHART_DATA}};
+        let currentIndex = 0;
+
+        // 初始化第一个图表
+        window.onload = function() {
+            if (chartData.length > 0) {
+                renderChart(currentIndex);
+                updateInfo();
+                updateButtons();
+            } else {
+                document.getElementById('chart-container').innerHTML = '<p style="color:red; text-align:center;">没有图表数据</p>';
+            }
+        };
+
+        function renderChart(index) {
+            const item = chartData[index];
+            if (!item) return;
+            const chartJson = JSON.parse(item.json);
+            Plotly.newPlot('chart-container', chartJson.data, chartJson.layout, {responsive: true});
+        }
+
+        function updateInfo() {
+            const item = chartData[currentIndex];
+            if (!item) return;
+            const infoDiv = document.getElementById('stock-info');
+            infoDiv.innerHTML = `TOP${item.rank} - ${item.name} (${item.code})`;
+        }
+
+        function updateButtons() {
+            document.getElementById('prev-btn').disabled = (currentIndex === 0);
+            document.getElementById('next-btn').disabled = (currentIndex === chartData.length - 1);
+            document.getElementById('page-indicator').innerText = `第 ${currentIndex+1} / ${chartData.length} 只`;
+        }
+
+        function changeChart(delta) {
+            const newIndex = currentIndex + delta;
+            if (newIndex >= 0 && newIndex < chartData.length) {
+                currentIndex = newIndex;
+                renderChart(currentIndex);
+                updateInfo();
+                updateButtons();
+            }
+        }
+    </script>
+</body>
+</html>
