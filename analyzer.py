@@ -118,15 +118,15 @@ class IndicatorAnalyzer:
             row=1, col=1
         )
 
-        # 原始MA10
+        # 原始MA10（增加可见性，使用实线加粗）
         fig.add_trace(
             go.Scatter(
                 x=df_signals['日期'],
                 y=df_signals[f'MA{self.ma_period}'],
                 mode='lines',
                 name=f'原始MA{self.ma_period}',
-                line=dict(color='#ffa726', width=1, dash='dot'),
-                opacity=0.6
+                line=dict(color='#ffa726', width=2, dash='dash'),  # 修改为更明显的橙色虚线
+                opacity=0.8
             ),
             row=1, col=1
         )
@@ -138,12 +138,12 @@ class IndicatorAnalyzer:
                 y=df_signals[smooth_ma_col],
                 mode='lines',
                 name=f'平滑MA{self.ma_period}',
-                line=dict(color='#2979ff', width=2)
+                line=dict(color='#2979ff', width=3)  # 加粗
             ),
             row=1, col=1
         )
 
-        # 买卖信号
+        # 买卖信号：将信号点绘制在平滑MA10线上（而非收盘价）
         buy_signals = df_signals[df_signals['signal'] == 'BUY']
         sell_signals = df_signals[df_signals['signal'] == 'SELL']
 
@@ -151,7 +151,7 @@ class IndicatorAnalyzer:
             fig.add_trace(
                 go.Scatter(
                     x=buy_signals['日期'],
-                    y=buy_signals['收盘'],
+                    y=buy_signals[smooth_ma_col],  # 使用平滑MA10的值
                     mode='markers',
                     name='买入信号',
                     marker=dict(
@@ -161,7 +161,7 @@ class IndicatorAnalyzer:
                         line=dict(color='white', width=2)
                     ),
                     text=[f"买入<br>价格: {price:.2f}<br>强度: {strength:.4f}<br>日期: {date.strftime('%Y-%m-%d')}"
-                          for price, strength, date in zip(buy_signals['收盘'], buy_signals['signal_strength'], buy_signals['日期'])],
+                          for price, strength, date in zip(buy_signals[smooth_ma_col], buy_signals['signal_strength'], buy_signals['日期'])],
                     hovertemplate='%{text}<extra></extra>'
                 ),
                 row=1, col=1
@@ -171,7 +171,7 @@ class IndicatorAnalyzer:
             fig.add_trace(
                 go.Scatter(
                     x=sell_signals['日期'],
-                    y=sell_signals['收盘'],
+                    y=sell_signals[smooth_ma_col],  # 使用平滑MA10的值
                     mode='markers',
                     name='卖出信号',
                     marker=dict(
@@ -181,7 +181,7 @@ class IndicatorAnalyzer:
                         line=dict(color='white', width=2)
                     ),
                     text=[f"卖出<br>价格: {price:.2f}<br>日期: {date.strftime('%Y-%m-%d')}"
-                          for price, date in zip(sell_signals['收盘'], sell_signals['日期'])],
+                          for price, date in zip(sell_signals[smooth_ma_col], sell_signals['日期'])],
                     hovertemplate='%{text}<extra></extra>'
                 ),
                 row=1, col=1
@@ -216,7 +216,7 @@ class IndicatorAnalyzer:
         # 斜率零轴
         fig.add_hline(y=0, line_dash="dash", line_color="gray", row=3, col=1)
 
-        # 斜率信号点
+        # 斜率信号点（同样使用平滑MA10值）
         if len(buy_signals) > 0:
             fig.add_trace(
                 go.Scatter(
